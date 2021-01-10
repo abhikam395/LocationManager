@@ -5,7 +5,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
-
 import com.example.locationmanager.R;
 
 public class RegisterActivity extends AppCompatActivity {
