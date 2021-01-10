@@ -1,0 +1,15 @@
+package com.example.locationmanager.activities;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+
+import com.example.locationmanager.R;
+
+public class OverviewActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_overview);
+    }
+}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".activities.PermissionActivity"
+    android:orientation="vertical"
+    android:padding="100px">
+    
+    <ImageView
+        android:id="@+id/permission_img_icon"
+        android:layout_width="match_parent"
+        android:layout_height="800px"
+        android:layout_marginTop="400px"/>
+    
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/gps_location_label"
+        android:textStyle="bold"
+        android:textSize="15sp"
+        android:textColor="@color/blue"
+        android:textAlignment="center"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50px"
+        android:text="@string/permission_note"
+        android:textAlignment="center"
+        android:textSize="10sp"
+        android:textColor="@color/red"/>
+
+    <Button
+        android:id="@+id/permission_allow_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/allow_permissions"
+        android:layout_marginTop="100px"
+        android:textColor="@color/grey"
+        android:background="@color/blue"/>
+
+</LinearLayout>

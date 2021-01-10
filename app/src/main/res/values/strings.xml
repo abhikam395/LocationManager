@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">LocationManager</string>
+    <string name="gps_location_label">We need GPS permission so that we can retrieve your accurate location.</string>
+    <string name="allow_permissions">Allow permissions</string>
+    <string name="permission_note"><font size="20">*</font> GPS drains battery so don\'t keep GPS on for long time.</string>
+    <string name="already_have_an_account">Already have an account?</string>
+    <string name="login">Login</string>
+    <string name="username">Username</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="facebook">Facebook</string>
+    <string name="g_mail">G-mail</string>
+    <string name="continue_label">Continue</string>
+    <string name="don_t_have_an_account">Don\'t have an account ?</string>
+    <string name="register">Register</string>
 </resources>
