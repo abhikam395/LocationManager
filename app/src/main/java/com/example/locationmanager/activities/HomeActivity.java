@@ -12,6 +12,8 @@ import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
@@ -21,17 +23,27 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 
 import com.example.locationmanager.BuildConfig;
 import com.example.locationmanager.R;
@@ -63,9 +75,14 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
-public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback{
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+
+public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
     private static final String TAG = HomeActivity.class.getSimpleName();
 
     private GoogleMap mGoogleMap;
@@ -82,6 +99,19 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Tracks the bound state of the service.
     private boolean mBound = false;
     private transient int count = 0;
+
+    public Toolbar toolbar;
+    private DrawerLayout drawerLayout;
+    private ActionBarDrawerToggle actionBarDrawerToggle;
+    private TextView txtCurrentLocation;
+    private NavigationView navigationView;
+    private CardView cardViewAllUsers;
+    private CardView cardViewNearMe;
+    private CardView cardViewProfile;
+    private CardView cardViewSetting;
+    private CardView cardViewLogout;
+
+    private View header;
 
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -119,12 +149,54 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
 
+        init();
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
     }
 
+    private void init(){
+        toolbar = findViewById(R.id.toolbar);
+        drawerLayout = findViewById(R.id.drawer);
+        navigationView = findViewById(R.id.nav_view);
+
+        header = navigationView.getHeaderView(0);
+        txtCurrentLocation = header.findViewById(R.id.txt_current_location);
+        cardViewAllUsers = (CardView) header.findViewById(R.id.cardview_all_user);
+        cardViewNearMe = (CardView) header.findViewById(R.id.cardview_near_me);
+        cardViewProfile = (CardView) header.findViewById(R.id.cardview_profile);
+        cardViewSetting = (CardView) header.findViewById(R.id.cardview_setting);
+        cardViewLogout = (CardView) header.findViewById(R.id.cardview_logout);
+
+        setSupportActionBar(toolbar);
+        actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close );
+        drawerLayout.addDrawerListener(actionBarDrawerToggle);
+
+        cardViewAllUsers.setOnClickListener(this);
+        cardViewNearMe.setOnClickListener(this);
+        cardViewProfile.setOnClickListener(this);
+        cardViewSetting.setOnClickListener(this);
+        cardViewLogout.setOnClickListener(this);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.toolbar_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.menu_item: {
+                drawerLayout.openDrawer(Gravity.LEFT);
+                return  true;
+            }
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -185,7 +257,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (shouldProvideRationale) {
             Log.i(TAG, "Displaying permission rationale to provide additional context.");
             Snackbar.make(
-                    findViewById(R.id.home_activity),
+                    findViewById(R.id.drawer),
                     "Permission",
                     Snackbar.LENGTH_INDEFINITE)
                     .setAction("Ok", new View.OnClickListener() {
@@ -226,7 +298,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mService.requestLocationUpdates();
             } else {
                 Snackbar.make(
-                        findViewById(R.id.home_activity),
+                        findViewById(R.id.drawer),
                         "Permission denied",
                         Snackbar.LENGTH_INDEFINITE)
                         .setAction("Settings", new View.OnClickListener() {
@@ -248,6 +320,42 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+        return false;
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.cardview_all_user: {
+                Toast.makeText(this, "All users", Toast.LENGTH_SHORT).show();
+                drawerLayout.closeDrawer(Gravity.LEFT);
+                break;
+            }
+            case R.id.cardview_near_me: {
+                Toast.makeText(this, "Near Me", Toast.LENGTH_SHORT).show();
+                drawerLayout.closeDrawer(Gravity.LEFT);
+                break;
+            }
+            case R.id.cardview_profile: {
+                Toast.makeText(this, "Profile", Toast.LENGTH_SHORT).show();
+                drawerLayout.closeDrawer(Gravity.LEFT);
+                break;
+            }
+            case R.id.cardview_setting: {
+                Toast.makeText(this, "Setting", Toast.LENGTH_SHORT).show();
+                drawerLayout.closeDrawer(Gravity.LEFT);
+                break;
+            }
+            case R.id.cardview_logout: {
+                Toast.makeText(this, "Logout", Toast.LENGTH_SHORT).show();
+                drawerLayout.closeDrawer(Gravity.LEFT);
+                break;
+            }
+        }
+    }
+
     /**
      * Receiver for broadcasts sent by {@link LocationUpdatesService}.
      */
@@ -257,6 +365,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             Location location = intent.getParcelableExtra(mService.EXTRA_LOCATION);
             Log.d(TAG, "onReceive: " + location);
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            txtCurrentLocation.setText(getAddress(latLng));
             if (location != null) {
                 addMarker(new LatLng(location.getLatitude(), location.getLongitude()));
                 if(count == 0) {
@@ -268,7 +377,25 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    private String getAddress(LatLng latLng){
+        Geocoder geocoder;
+        List<Address> addresses;
+        geocoder = new Geocoder(this, Locale.getDefault());
+        String currentAddress = "";
+
+        try {
+            addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+            String address = addresses.get(0).getAddressLine(0);
+            currentAddress = address;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return currentAddress;
+    }
+
     private void addMarker(LatLng latLng){
+        mGoogleMap.clear();
         mGoogleMap.addMarker(new MarkerOptions()
                 .position(latLng)
                 .title("Marker in Sydney"));
