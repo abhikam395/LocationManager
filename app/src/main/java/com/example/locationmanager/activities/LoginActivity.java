@@ -73,7 +73,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             }
             case R.id.login_btn_continue: {
                 if(isValidate()){
-                    startActivity(new Intent(this, HomeActivity.class));
+                    startActivity(new Intent(this, PermissionActivity.class));
                     finish();
                 }
                 else

@@ -1,6 +1,9 @@
 package com.example.locationmanager.activities;
 
+import android.Manifest;
 import android.content.Intent;
+
+import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -76,7 +79,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             }
             case R.id.register_btn_continue: {
                 if(isValidate()){
-                    startActivity(new Intent(this, HomeActivity.class));
+                    startActivity(new Intent(this, PermissionActivity.class));
                     finish();
                 }
                 else

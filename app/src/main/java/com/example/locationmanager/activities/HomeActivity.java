@@ -50,8 +50,10 @@ import com.example.locationmanager.R;
 import com.example.locationmanager.services.LocationUpdatesService;
 import com.example.locationmanager.utils.LocationUtils;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -61,6 +63,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsResult;
 import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
@@ -207,12 +210,12 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onStart() {
         super.onStart();
 
-        // Bind to the service. If the service is in foreground mode, this signals to the service
-        // that since this activity is in the foreground, the service can exit foreground mode.
+//        // Bind to the service. If the service is in foreground mode, this signals to the service
+//        // that since this activity is in the foreground, the service can exit foreground mode.
         bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
                 Context.BIND_AUTO_CREATE);
-
     }
+
 
     @Override
     protected void onResume() {
@@ -341,11 +344,13 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             case R.id.cardview_profile: {
                 Toast.makeText(this, "Profile", Toast.LENGTH_SHORT).show();
                 drawerLayout.closeDrawer(Gravity.LEFT);
+                startActivity(new Intent(this, ProfileActivity.class));
                 break;
             }
             case R.id.cardview_setting: {
                 Toast.makeText(this, "Setting", Toast.LENGTH_SHORT).show();
                 drawerLayout.closeDrawer(Gravity.LEFT);
+                startActivity(new Intent(this, SettingActivity.class));
                 break;
             }
             case R.id.cardview_logout: {
