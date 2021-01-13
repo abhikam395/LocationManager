@@ -11,7 +11,16 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 import com.example.locationmanager.R;
+import com.example.locationmanager.models.AuthResponse;
+import com.example.locationmanager.models.User;
+import com.example.locationmanager.services.AuthInterface;
+import com.example.locationmanager.services.RestClient;
+import com.example.locationmanager.utils.SharePreferenceManager;
 import com.google.android.material.textfield.TextInputEditText;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -19,7 +28,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     private Button btnFb, btnGmail, btnContinue;
     private TextInputEditText edtEmail;
     private TextInputEditText edtPassword;
-    private String username, email, password;
+    private String email, password;
+    private User user;
+
+    private SharePreferenceManager sharePreferenceManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +42,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void init(){
+        sharePreferenceManager = new SharePreferenceManager(this);
         txtRegister  = findViewById(R.id.login_text_register);
         btnFb = findViewById(R.id.login_btn_fb);
         btnGmail = findViewById(R.id.login_btn_g_mail);
@@ -55,6 +68,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         setInputs();
 
         String email = this.email.trim(), password = this.password.trim();
+        user = new User(null, email, password);
 
         if (email == null || !email.contains("@gmail.com"))
             return  false;
@@ -73,8 +87,26 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             }
             case R.id.login_btn_continue: {
                 if(isValidate()){
-                    startActivity(new Intent(this, PermissionActivity.class));
-                    finish();
+                    AuthInterface authInterface = RestClient.getClient().create(AuthInterface.class);
+                    Call<AuthResponse> call = authInterface.login(user.email, user.password);
+                    call.enqueue(new Callback<AuthResponse>() {
+                        @Override
+                        public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
+                            AuthResponse authResponse = response.body();
+                            if(authResponse.status){
+                                sharePreferenceManager.setToken(authResponse.data.token);
+                                startActivity(new Intent(getApplicationContext(), PermissionActivity.class));
+                                finish();
+                            }
+                            else
+                                Toast.makeText(getApplicationContext(),String.valueOf(authResponse.error.message),
+                                        Toast.LENGTH_SHORT).show();
+                        }
+                        @Override
+                        public void onFailure(Call<AuthResponse> call, Throwable t) {
+
+                        }
+                    });
                 }
                 else
                     Toast.makeText(this, "Wrong input", Toast.LENGTH_SHORT).show();

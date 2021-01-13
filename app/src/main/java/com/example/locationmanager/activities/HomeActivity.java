@@ -47,8 +47,13 @@ import androidx.navigation.Navigation;
 
 import com.example.locationmanager.BuildConfig;
 import com.example.locationmanager.R;
+import com.example.locationmanager.models.AuthResponse;
+import com.example.locationmanager.services.AuthInterface;
+import com.example.locationmanager.services.LocationInterface;
 import com.example.locationmanager.services.LocationUpdatesService;
+import com.example.locationmanager.services.RestClient;
 import com.example.locationmanager.utils.LocationUtils;
+import com.example.locationmanager.utils.SharePreferenceManager;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -85,6 +90,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
     private static final String TAG = HomeActivity.class.getSimpleName();
 
@@ -113,6 +122,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private CardView cardViewProfile;
     private CardView cardViewSetting;
     private CardView cardViewLogout;
+
+    private SharePreferenceManager sharePreferenceManager;
 
     private View header;
 
@@ -160,6 +171,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void init(){
+
+        sharePreferenceManager = new SharePreferenceManager(this);
         toolbar = findViewById(R.id.toolbar);
         drawerLayout = findViewById(R.id.drawer);
         navigationView = findViewById(R.id.nav_view);
@@ -181,6 +194,31 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         cardViewProfile.setOnClickListener(this);
         cardViewSetting.setOnClickListener(this);
         cardViewLogout.setOnClickListener(this);
+
+        callLocationApi();
+    }
+
+    private void callLocationApi(){
+        String token = sharePreferenceManager.getToken();
+        LocationInterface locationInterface = RestClient.getClient().create(LocationInterface.class);
+        Call<AuthResponse> call = locationInterface.getLocations(token);
+        call.enqueue(new Callback<AuthResponse>() {
+            @Override
+            public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
+                AuthResponse authResponse = response.body();
+                Log.d(TAG, "onResponse: " + call.request());
+                if(authResponse.status){
+                    Log.d(TAG, "onResponse: " + authResponse);
+                }
+                else
+                    Toast.makeText(getApplicationContext(),"Error got",
+                            Toast.LENGTH_SHORT).show();
+            }
+            @Override
+            public void onFailure(Call<AuthResponse> call, Throwable t) {
+
+            }
+        });
     }
 
     @Override
@@ -354,8 +392,11 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
             }
             case R.id.cardview_logout: {
+                sharePreferenceManager.clear();
                 Toast.makeText(this, "Logout", Toast.LENGTH_SHORT).show();
                 drawerLayout.closeDrawer(Gravity.LEFT);
+                startActivity(new Intent(this, RegisterActivity.class));
+                finish();
                 break;
             }
         }

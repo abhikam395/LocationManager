@@ -46,6 +46,12 @@ public class PermissionActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if(checkPermissionStatus(this, permissions)) {
+            startActivity(new Intent(this, HomeActivity.class));
+            finish();
+        }
+
         setContentView(R.layout.activity_permission);
 
         imgViewIcon = findViewById(R.id.permission_img_icon);
