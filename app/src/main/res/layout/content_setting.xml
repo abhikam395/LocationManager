@@ -23,6 +23,7 @@
         android:weightSum="4">
 
         <RadioButton
+            android:id="@+id/radio_btn_normal_setting"
             android:layout_width="0px"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -31,14 +32,7 @@
             android:text="Normal"/>
 
         <RadioButton
-            android:layout_width="0px"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/blue"
-            android:textStyle="bold"
-            android:text="Hybrid"/>
-
-        <RadioButton
+            android:id="@+id/radio_btn_satellite_setting"
             android:layout_width="0px"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -47,12 +41,22 @@
             android:text="Satellite"/>
 
         <RadioButton
+            android:id="@+id/radio_btn_terrain_setting"
             android:layout_width="0px"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:textColor="@color/blue"
             android:textStyle="bold"
             android:text="Terrain"/>
+
+        <RadioButton
+            android:id="@+id/radio_btn_hybrid_setting"
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/blue"
+            android:textStyle="bold"
+            android:text="Hybrid"/>
 
     </RadioGroup>
 </LinearLayout>

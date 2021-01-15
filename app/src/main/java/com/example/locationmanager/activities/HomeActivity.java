@@ -81,6 +81,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private SharePreferenceManager sharePreferenceManager;
     private List<LocationData> locationDataList;
+    private Timer timer;
 
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -155,20 +156,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private int getMapType(){
         int mapType = sharePreferenceManager.getMapType();
-        if(mapType ==GoogleMap.MAP_TYPE_NORMAL){
-            return GoogleMap.MAP_TYPE_NORMAL;
-        }
-        else if(mapType == GoogleMap.MAP_TYPE_HYBRID){
-            return GoogleMap.MAP_TYPE_HYBRID;
-        }
-        else if(mapType == GoogleMap.MAP_TYPE_SATELLITE){
-            return GoogleMap.MAP_TYPE_SATELLITE;
-        }
-        else if (mapType == GoogleMap.MAP_TYPE_TERRAIN){
-            return GoogleMap.MAP_TYPE_TERRAIN;
-        }
-        else
-            return GoogleMap.MAP_TYPE_NORMAL;
+        if(mapType != 0)
+            return mapType;
+        return 1;
     }
 
     //get users location
@@ -220,22 +210,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onStart();
         bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
                 Context.BIND_AUTO_CREATE);
+//        setTimer();
     }
 
-    /**
-     * Unbind from the service. This signals to the service that this activity is no longer
-     * in the foreground, and the service can respond by promoting itself to a foreground service.
-     *
-     */
-    @Override
-    protected void onStop() {
-        if (mBound) {
-            unbindService(mServiceConnection);
-            mBound = false;
-        }
-        sharePreferenceManager.setLastLocation(lastLocation);
-        super.onStop();
-    }
 
 
     @Override
@@ -252,6 +229,10 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume: " + mGoogleMap);
+        if(mGoogleMap != null) {
+            mGoogleMap.setMapType(getMapType());
+        }
         LocalBroadcastManager.getInstance(this).registerReceiver(myReceiver,
                 new IntentFilter(mService.ACTION_BROADCAST));
     }
@@ -262,8 +243,23 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onPause();
     }
 
+    /**
+     * Unbind from the service. This signals to the service that this activity is no longer
+     * in the foreground, and the service can respond by promoting itself to a foreground service.
+     *
+     */
+    @Override
+    protected void onStop() {
+        stopTimer();
+        if (mBound) {
+            unbindService(mServiceConnection);
+            mBound = false;
+        }
+        sharePreferenceManager.setLastLocation(lastLocation);
+        super.onStop();
+    }
 
-      @Override
+    @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         return false;
     }
@@ -322,13 +318,21 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     //call again every 20 second
     private void callSelfAgain(){
         callLocationApi();
-        Timer interval = new Timer();
-        interval.scheduleAtFixedRate(new TimerTask() {
+        setTimer();
+    }
+
+    private void setTimer(){
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 callLocationApi();
             }
         }, 20 * 1000, 20 * 1000);
+    }
+
+    private void stopTimer(){
+        timer.cancel();
     }
 
     private void setAddress(TextView lblUserAddress, LatLng latLng){
