@@ -1,106 +1,62 @@
 package com.example.locationmanager.activities;
 
-import android.Manifest;
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.IntentSender;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.Looper;
-import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 
-import com.example.locationmanager.BuildConfig;
 import com.example.locationmanager.R;
-import com.example.locationmanager.models.AuthResponse;
-import com.example.locationmanager.services.AuthInterface;
+import com.example.locationmanager.models.LocationData;
+import com.example.locationmanager.models.LocationResponse;
 import com.example.locationmanager.services.LocationInterface;
 import com.example.locationmanager.services.LocationUpdatesService;
 import com.example.locationmanager.services.RestClient;
-import com.example.locationmanager.utils.LocationUtils;
 import com.example.locationmanager.utils.SharePreferenceManager;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResolvableApiException;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.LocationSettingsResult;
-import com.google.android.gms.location.LocationSettingsStates;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
+public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback,
+        NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
     private static final String TAG = HomeActivity.class.getSimpleName();
 
     private GoogleMap mGoogleMap;
-
-    // Used in checking for runtime permissions.
-    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 
     // The BroadcastReceiver used to listen from broadcasts from the service.
     private MyReceiver myReceiver;
@@ -108,13 +64,11 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     // A reference to the service used to get location updates.
     private LocationUpdatesService mService = null;
 
-    // Tracks the bound state of the service.
+    // Tracks the bound state of the service.3
     private boolean mBound = false;
-    private transient int count = 0;
 
     public Toolbar toolbar;
     private DrawerLayout drawerLayout;
-    private ActionBarDrawerToggle actionBarDrawerToggle;
     private TextView txtCurrentLocation;
     private NavigationView navigationView;
     private CardView cardViewAllUsers;
@@ -122,10 +76,11 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private CardView cardViewProfile;
     private CardView cardViewSetting;
     private CardView cardViewLogout;
+    private View header;
+    private LatLng lastLocation;
 
     private SharePreferenceManager sharePreferenceManager;
-
-    private View header;
+    private List<LocationData> locationDataList;
 
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -135,11 +90,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             LocationUpdatesService.LocalBinder binder = (LocationUpdatesService.LocalBinder) service;
             mService = binder.getService();
             mBound = true;
-            if (!checkPermissions()) {
-                requestPermissions();
-            } else {
-                mService.requestLocationUpdates();
-            }
+            mService.requestLocationUpdates();
         }
 
         @Override
@@ -156,69 +107,102 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         myReceiver = new MyReceiver();
         setContentView(R.layout.activity_home);
 
-        // Check that the user hasn't revoked permissions by going to Settings.
-        if (LocationUtils.requestingLocationUpdates(this)) {
-            if (!checkPermissions()) {
-                requestPermissions();
-            }
-        }
-
         init();
-
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
 
     private void init(){
 
         sharePreferenceManager = new SharePreferenceManager(this);
+        locationDataList = new ArrayList<>();
+
         toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         drawerLayout = findViewById(R.id.drawer);
         navigationView = findViewById(R.id.nav_view);
 
         header = navigationView.getHeaderView(0);
         txtCurrentLocation = header.findViewById(R.id.txt_current_location);
-        cardViewAllUsers = (CardView) header.findViewById(R.id.cardview_all_user);
-        cardViewNearMe = (CardView) header.findViewById(R.id.cardview_near_me);
-        cardViewProfile = (CardView) header.findViewById(R.id.cardview_profile);
-        cardViewSetting = (CardView) header.findViewById(R.id.cardview_setting);
-        cardViewLogout = (CardView) header.findViewById(R.id.cardview_logout);
+        cardViewAllUsers = header.findViewById(R.id.cardview_all_user);
+        cardViewNearMe = header.findViewById(R.id.cardview_near_me);
+        cardViewProfile = header.findViewById(R.id.cardview_profile);
+        cardViewSetting = header.findViewById(R.id.cardview_setting);
+        cardViewLogout = header.findViewById(R.id.cardview_logout);
 
-        setSupportActionBar(toolbar);
-        actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.drawer_open, R.string.drawer_close );
-        drawerLayout.addDrawerListener(actionBarDrawerToggle);
+        setListeners();
+        callSelfAgain();
+    }
 
+    private void setListeners(){
         cardViewAllUsers.setOnClickListener(this);
         cardViewNearMe.setOnClickListener(this);
         cardViewProfile.setOnClickListener(this);
         cardViewSetting.setOnClickListener(this);
         cardViewLogout.setOnClickListener(this);
-
-        callLocationApi();
     }
 
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mGoogleMap = googleMap;
+        mGoogleMap.setMapType(getMapType());
+        lastLocation = sharePreferenceManager.getLastLocation();
+        if(lastLocation != null){
+            mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(lastLocation, 18.0f));
+            addMarker(lastLocation, "My location");
+        }
+    }
+
+    private int getMapType(){
+        int mapType = sharePreferenceManager.getMapType();
+        if(mapType ==GoogleMap.MAP_TYPE_NORMAL){
+            return GoogleMap.MAP_TYPE_NORMAL;
+        }
+        else if(mapType == GoogleMap.MAP_TYPE_HYBRID){
+            return GoogleMap.MAP_TYPE_HYBRID;
+        }
+        else if(mapType == GoogleMap.MAP_TYPE_SATELLITE){
+            return GoogleMap.MAP_TYPE_SATELLITE;
+        }
+        else if (mapType == GoogleMap.MAP_TYPE_TERRAIN){
+            return GoogleMap.MAP_TYPE_TERRAIN;
+        }
+        else
+            return GoogleMap.MAP_TYPE_NORMAL;
+    }
+
+    //get users location
     private void callLocationApi(){
         String token = sharePreferenceManager.getToken();
         LocationInterface locationInterface = RestClient.getClient().create(LocationInterface.class);
-        Call<AuthResponse> call = locationInterface.getLocations(token);
-        call.enqueue(new Callback<AuthResponse>() {
+        Call<LocationResponse> call = locationInterface.getLocations(token);
+        call.enqueue(new Callback<LocationResponse>() {
             @Override
-            public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
-                AuthResponse authResponse = response.body();
+            public void onResponse(Call<LocationResponse> call, Response<LocationResponse> response) {
+                LocationResponse locationResponse = response.body();
                 Log.d(TAG, "onResponse: " + call.request());
-                if(authResponse.status){
-                    Log.d(TAG, "onResponse: " + authResponse);
+                if(locationResponse.status){
+                    locationDataList = locationResponse.getData().getLocations();
+                    addMarkersToMap();
                 }
                 else
                     Toast.makeText(getApplicationContext(),"Error got",
                             Toast.LENGTH_SHORT).show();
             }
             @Override
-            public void onFailure(Call<AuthResponse> call, Throwable t) {
+            public void onFailure(Call<LocationResponse> call, Throwable t) {
 
             }
         });
+    }
+
+    private void addMarkersToMap(){
+        mGoogleMap.clear();
+        for(LocationData locationData : locationDataList){
+            LatLng latLng = new LatLng(locationData.getLatitude(), locationData.getLongitude());
+            addMarker(latLng, "User");
+        }
+        addMarker(lastLocation, "My location");
     }
 
     @Override
@@ -226,6 +210,33 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         getMenuInflater().inflate(R.menu.toolbar_menu, menu);
         return super.onCreateOptionsMenu(menu);
     }
+
+    /**
+     * Bind to the service. If the service is in foreground mode, this signals to the service
+     * that since this activity is in the foreground, the service can exit foreground mode.
+     */
+    @Override
+    protected void onStart() {
+        super.onStart();
+        bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
+                Context.BIND_AUTO_CREATE);
+    }
+
+    /**
+     * Unbind from the service. This signals to the service that this activity is no longer
+     * in the foreground, and the service can respond by promoting itself to a foreground service.
+     *
+     */
+    @Override
+    protected void onStop() {
+        if (mBound) {
+            unbindService(mServiceConnection);
+            mBound = false;
+        }
+        sharePreferenceManager.setLastLocation(lastLocation);
+        super.onStop();
+    }
+
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
@@ -235,25 +246,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 return  true;
             }
         }
-
         return super.onOptionsItemSelected(item);
     }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mGoogleMap = googleMap;
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-//        // Bind to the service. If the service is in foreground mode, this signals to the service
-//        // that since this activity is in the foreground, the service can exit foreground mode.
-        bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
-                Context.BIND_AUTO_CREATE);
-    }
-
 
     @Override
     protected void onResume() {
@@ -268,100 +262,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onPause();
     }
 
-    @Override
-    protected void onStop() {
-        if (mBound) {
-            // Unbind from the service. This signals to the service that this activity is no longer
-            // in the foreground, and the service can respond by promoting itself to a foreground
-            // service.
-            unbindService(mServiceConnection);
-            mBound = false;
-        }
-        super.onStop();
-    }
 
-    /**
-     * Returns the current state of the permissions needed.
-     */
-    private boolean checkPermissions() {
-        return  PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION);
-    }
-
-    private void requestPermissions() {
-        boolean shouldProvideRationale =
-                ActivityCompat.shouldShowRequestPermissionRationale(this,
-                        Manifest.permission.ACCESS_FINE_LOCATION);
-
-        // Provide an additional rationale to the user. This would happen if the user denied the
-        // request previously, but didn't check the "Don't ask again" checkbox.
-        if (shouldProvideRationale) {
-            Log.i(TAG, "Displaying permission rationale to provide additional context.");
-            Snackbar.make(
-                    findViewById(R.id.drawer),
-                    "Permission",
-                    Snackbar.LENGTH_INDEFINITE)
-                    .setAction("Ok", new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            // Request permission
-                            ActivityCompat.requestPermissions(HomeActivity.this,
-                                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                                    REQUEST_PERMISSIONS_REQUEST_CODE);
-                        }
-                    })
-                    .show();
-        } else {
-            Log.i(TAG, "Requesting permission");
-            // Request permission. It's possible this can be auto answered if device policy
-            // sets the permission in a given state or the user denied the permission
-            // previously and checked "Never ask again".
-            ActivityCompat.requestPermissions(HomeActivity.this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    REQUEST_PERMISSIONS_REQUEST_CODE);
-        }
-    }
-
-    /**
-     * Callback received when a permissions request has been completed.
-     */
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        Log.i(TAG, "onRequestPermissionResult");
-        if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
-            if (grantResults.length <= 0) {
-                // If user interaction was interrupted, the permission request is cancelled and you
-                // receive empty arrays.
-                Log.i(TAG, "User interaction was cancelled.");
-            } else if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission was granted.
-                mService.requestLocationUpdates();
-            } else {
-                Snackbar.make(
-                        findViewById(R.id.drawer),
-                        "Permission denied",
-                        Snackbar.LENGTH_INDEFINITE)
-                        .setAction("Settings", new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                // Build intent that displays the App settings screen.
-                                Intent intent = new Intent();
-                                intent.setAction(
-                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                                Uri uri = Uri.fromParts("package",
-                                        BuildConfig.APPLICATION_ID, null);
-                                intent.setData(uri);
-                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                startActivity(intent);
-                            }
-                        })
-                        .show();
-            }
-        }
-    }
-
-    @Override
+      @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         return false;
     }
@@ -409,44 +311,47 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         @Override
         public void onReceive(Context context, Intent intent) {
             Location location = intent.getParcelableExtra(mService.EXTRA_LOCATION);
-            Log.d(TAG, "onReceive: " + location);
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-            txtCurrentLocation.setText(getAddress(latLng));
-            if (location != null) {
-                addMarker(new LatLng(location.getLatitude(), location.getLongitude()));
-                if(count == 0) {
-                    mGoogleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-                    mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17));
-                }
-                count = 1;
+            setAddress(txtCurrentLocation, latLng);
+            lastLocation = latLng;
+            mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(lastLocation, 18.0f));
+            addMarkersToMap();
+        }
+    }
+
+    //call again every 20 second
+    private void callSelfAgain(){
+        callLocationApi();
+        Timer interval = new Timer();
+        interval.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                callLocationApi();
             }
-        }
+        }, 20 * 1000, 20 * 1000);
     }
 
-    private String getAddress(LatLng latLng){
+    private void setAddress(TextView lblUserAddress, LatLng latLng){
         Geocoder geocoder;
-        List<Address> addresses;
+        final List<Address>[] addresses = new List[]{new ArrayList<>()};
         geocoder = new Geocoder(this, Locale.getDefault());
-        String currentAddress = "";
 
-        try {
-            addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
-            String address = addresses.get(0).getAddressLine(0);
-            currentAddress = address;
+        Thread thread = new Thread(() -> {
+            try {
+                addresses[0] = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+                String address = addresses[0].get(0).getAddressLine(0);
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return currentAddress;
+                lblUserAddress.post(() -> lblUserAddress.setText(address));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        thread.start();
     }
 
-    private void addMarker(LatLng latLng){
-        mGoogleMap.clear();
-        mGoogleMap.addMarker(new MarkerOptions()
-                .position(latLng)
-                .title("Marker in Sydney"));
-        Log.d(TAG, "addMarker: " + latLng);
-        mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
-
+    private void addMarker(LatLng latLng, String title){
+        if(latLng == null)
+            return;
+        mGoogleMap.addMarker(new MarkerOptions().position(latLng).title(title));
     }
 }

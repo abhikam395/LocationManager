@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.example.locationmanager.models.User;
+import com.google.android.gms.maps.model.LatLng;
 
 public class SharePreferenceManager {
 
@@ -18,8 +19,18 @@ public class SharePreferenceManager {
         editor = sharedPreference.edit();
     }
 
+    public void setLastLocation(LatLng latLng){
+        editor.putString("lat", String.valueOf(latLng.latitude));
+        editor.putString("long", String.valueOf(latLng.longitude));
+        editor.apply();
+    }
+
+    public void setMapType(int mapType){
+        editor.putInt("mapType", mapType);
+        editor.apply();
+    }
+
     public void setUser(User user){
-//        editor.putInt("id", user.id);
         editor.putString("name", user.name);
         editor.putString("email", user.email);
         editor.apply();
@@ -37,6 +48,18 @@ public class SharePreferenceManager {
         String email = sharedPreference.getString("email", null);
         User user = new User(name, email, "sdfsdf");
         return user;
+    }
+
+    public LatLng getLastLocation(){
+        String latitude = sharedPreference.getString("lat", null);
+        String longitude = sharedPreference.getString("long", null);
+        if( latitude == null && longitude == null)
+            return null;
+        return new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
+    }
+
+    public int getMapType(){
+        return sharedPreference.getInt("mapType", 0);
     }
 
     public String getToken(){

@@ -100,7 +100,7 @@ public class LocationUpdatesService extends Service {
     /**
      * The current location.
      */
-    private Location mLocation;
+    public Location mLocation;
 
     public LocationUpdatesService() {
     }
@@ -281,17 +281,14 @@ public class LocationUpdatesService extends Service {
         return builder.build();
     }
 
-    private void getLastLocation() {
+    public void getLastLocation() {
         try {
             mFusedLocationClient.getLastLocation()
-                    .addOnCompleteListener(new OnCompleteListener<Location>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Location> task) {
-                            if (task.isSuccessful() && task.getResult() != null) {
-                                mLocation = task.getResult();
-                            } else {
-                                Log.w(TAG, "Failed to get location.");
-                            }
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && task.getResult() != null) {
+                            mLocation = task.getResult();
+                        } else {
+                            Log.w(TAG, "Failed to get location.");
                         }
                     });
         } catch (SecurityException unlikely) {

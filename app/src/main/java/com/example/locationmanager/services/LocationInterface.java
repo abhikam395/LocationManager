@@ -1,6 +1,7 @@
 package com.example.locationmanager.services;
 
 import com.example.locationmanager.models.AuthResponse;
+import com.example.locationmanager.models.LocationResponse;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
@@ -11,7 +12,7 @@ import retrofit2.http.Query;
 
 public interface LocationInterface {
     @GET("/api/v1/location")
-    Call<AuthResponse> getLocations(
+    Call<LocationResponse> getLocations(
             @Header("Token") String token
     );
 

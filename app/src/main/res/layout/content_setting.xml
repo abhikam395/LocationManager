@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/map_type"
+        android:layout_marginTop="30dp"
+        android:textStyle="bold"
+        android:textColor="@color/blue"
+        android:paddingLeft="10dp"/>
+
+    <RadioGroup
+        android:id="@+id/radio_ground_setting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        android:weightSum="4">
+
+        <RadioButton
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:focusedByDefault="true"
+            android:textStyle="bold"
+            android:text="Normal"/>
+
+        <RadioButton
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/blue"
+            android:textStyle="bold"
+            android:text="Hybrid"/>
+
+        <RadioButton
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/blue"
+            android:textStyle="bold"
+            android:text="Satellite"/>
+
+        <RadioButton
+            android:layout_width="0px"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/blue"
+            android:textStyle="bold"
+            android:text="Terrain"/>
+
+    </RadioGroup>
+</LinearLayout>

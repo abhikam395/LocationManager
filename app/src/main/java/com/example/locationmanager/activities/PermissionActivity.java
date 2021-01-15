@@ -58,12 +58,9 @@ public class PermissionActivity extends AppCompatActivity {
         btnPermissionAllow = findViewById(R.id.permission_allow_btn);
 
         imgViewIcon.setImageDrawable(getDrawable(R.mipmap.location_icon_background));
-        btnPermissionAllow.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                enableGPS();
-                checkAndRequestLocationPermissions();
-            }
+        btnPermissionAllow.setOnClickListener(v -> {
+            enableGPS();
+            checkAndRequestLocationPermissions();
         });
     }
 
