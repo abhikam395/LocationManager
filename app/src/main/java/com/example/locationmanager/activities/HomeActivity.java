@@ -16,6 +16,8 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,8 +29,10 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.example.locationmanager.R;
+import com.example.locationmanager.models.AuthUser;
 import com.example.locationmanager.models.LocationData;
 import com.example.locationmanager.models.LocationResponse;
+import com.example.locationmanager.models.LocationUser;
 import com.example.locationmanager.services.LocationInterface;
 import com.example.locationmanager.services.LocationUpdatesService;
 import com.example.locationmanager.services.RestClient;
@@ -38,7 +42,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.navigation.NavigationView;
 
 import java.io.IOException;
@@ -53,7 +59,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback,
-        NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
+        NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, GoogleMap.OnMarkerClickListener {
     private static final String TAG = HomeActivity.class.getSimpleName();
 
     private GoogleMap mGoogleMap;
@@ -67,7 +73,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     // Tracks the bound state of the service.3
     private boolean mBound = false;
 
-    public Toolbar toolbar;
+    private LinearLayout linearLayoutBottomSheet;
+    private BottomSheetBehavior bottomSheetBehavior;
+    private Toolbar toolbar;
     private DrawerLayout drawerLayout;
     private TextView txtCurrentLocation;
     private NavigationView navigationView;
@@ -76,12 +84,15 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private CardView cardViewProfile;
     private CardView cardViewSetting;
     private CardView cardViewLogout;
+    private Button btnStartChat;
     private View header;
     private LatLng lastLocation;
 
     private SharePreferenceManager sharePreferenceManager;
     private List<LocationData> locationDataList;
     private Timer timer;
+    private AuthUser user;
+    private TextView lblUserName;
 
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -116,6 +127,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void init(){
 
         sharePreferenceManager = new SharePreferenceManager(this);
+        user = sharePreferenceManager.getUser();
         locationDataList = new ArrayList<>();
 
         toolbar = findViewById(R.id.toolbar);
@@ -131,6 +143,12 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         cardViewSetting = header.findViewById(R.id.cardview_setting);
         cardViewLogout = header.findViewById(R.id.cardview_logout);
 
+        btnStartChat = findViewById(R.id.btn_start_chat);
+
+        lblUserName = findViewById(R.id.lbl_name_bottom_sheet_home);
+        linearLayoutBottomSheet = findViewById(R.id.bottom_sheet_home);
+        bottomSheetBehavior = BottomSheetBehavior.from(linearLayoutBottomSheet);
+
         setListeners();
         callSelfAgain();
     }
@@ -141,16 +159,52 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         cardViewProfile.setOnClickListener(this);
         cardViewSetting.setOnClickListener(this);
         cardViewLogout.setOnClickListener(this);
+        btnStartChat.setOnClickListener(this);
+
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        bottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View view, int i) {
+                switch (i){
+                    case BottomSheetBehavior.STATE_HIDDEN: {
+                        Log.d(TAG, "onStateChanged: " + "HIDDEN");
+                        break;
+                    }
+                    case BottomSheetBehavior.STATE_EXPANDED: {
+                        Log.d(TAG, "onStateChanged: " + "EXPANDED");
+                        break;
+                    }
+                    case BottomSheetBehavior.STATE_COLLAPSED: {
+                        Log.d(TAG, "onStateChanged: " + "COLLAPSED");
+                        break;
+                    }
+                    case BottomSheetBehavior.STATE_DRAGGING: {
+                        Log.d(TAG, "onStateChanged: " + "DRAGGING");
+                        break;
+                    }
+                    case BottomSheetBehavior.STATE_SETTLING: {
+                        Log.d(TAG, "onStateChanged: " + "SETTLING");
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public void onSlide(@NonNull View view, float v) {
+
+            }
+        });
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
+        mGoogleMap.setOnMarkerClickListener(this);
         mGoogleMap.setMapType(getMapType());
         lastLocation = sharePreferenceManager.getLastLocation();
         if(lastLocation != null){
             mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(lastLocation, 18.0f));
-            addMarker(lastLocation, "My location");
+            addMarker(lastLocation, "My location", user.getId());
         }
     }
 
@@ -173,6 +227,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d(TAG, "onResponse: " + call.request());
                 if(locationResponse.status){
                     locationDataList = locationResponse.getData().getLocations();
+                    Log.d(TAG, "onResponse: " + locationDataList.size());
                     addMarkersToMap();
                 }
                 else
@@ -189,10 +244,11 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void addMarkersToMap(){
         mGoogleMap.clear();
         for(LocationData locationData : locationDataList){
+            LocationUser user = locationData.getUser();
             LatLng latLng = new LatLng(locationData.getLatitude(), locationData.getLongitude());
-            addMarker(latLng, "User");
+            addMarker(latLng, user.name, user.id);
         }
-        addMarker(lastLocation, "My location");
+        addMarker(lastLocation, "My location", user.getId());
     }
 
     @Override
@@ -267,6 +323,10 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onClick(View v) {
         switch (v.getId()){
+            case R.id.btn_start_chat: {
+                startActivity(new Intent(this, ChatActivity.class));
+                break;
+            }
             case R.id.cardview_all_user: {
                 Toast.makeText(this, "All users", Toast.LENGTH_SHORT).show();
                 drawerLayout.closeDrawer(Gravity.LEFT);
@@ -298,6 +358,16 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
                 break;
             }
         }
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        int markerId = Integer.parseInt(marker.getSnippet());
+        if(markerId != user.getId()) {
+            lblUserName.setText(marker.getTitle());
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+        }
+        return true;
     }
 
     /**
@@ -353,9 +423,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         thread.start();
     }
 
-    private void addMarker(LatLng latLng, String title){
+    private void addMarker(LatLng latLng, String title, int userId){
         if(latLng == null)
             return;
-        mGoogleMap.addMarker(new MarkerOptions().position(latLng).title(title));
+        mGoogleMap.addMarker(new MarkerOptions().position(latLng).title(title).snippet(String.valueOf(userId)));
     }
 }

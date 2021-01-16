@@ -5,7 +5,7 @@ import java.util.List;
 public class Data {
 
     public String token;
-    public UserResponse userResponse;
+    public UserResponse user;
     public List<LocationData> locations;
 
     public String getToken(){
@@ -13,11 +13,7 @@ public class Data {
     }
 
     public UserResponse getUser(){
-        return userResponse;
-    }
-
-    public UserResponse getUserResponse() {
-        return userResponse;
+        return user;
     }
 
     public List<LocationData> getLocations() {

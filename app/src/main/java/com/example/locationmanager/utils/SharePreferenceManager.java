@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.example.locationmanager.models.AuthUser;
 import com.example.locationmanager.models.User;
 import com.google.android.gms.maps.model.LatLng;
 
@@ -30,7 +31,8 @@ public class SharePreferenceManager {
         editor.apply();
     }
 
-    public void setUser(User user){
+    public void setUser(AuthUser user){
+        editor.putInt("id", user.id);
         editor.putString("name", user.name);
         editor.putString("email", user.email);
         editor.apply();
@@ -42,11 +44,11 @@ public class SharePreferenceManager {
         editor.apply();
     }
 
-    public User getUser(){
+    public AuthUser getUser(){
         int id = sharedPreference.getInt("id", 0);
         String name = sharedPreference.getString("name", null);
         String email = sharedPreference.getString("email", null);
-        User user = new User(name, email, "sdfsdf");
+        AuthUser user = new AuthUser(id, name, email);
         return user;
     }
 

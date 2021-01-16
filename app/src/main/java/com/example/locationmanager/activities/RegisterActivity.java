@@ -15,7 +15,9 @@ import android.widget.Toast;
 
 import com.example.locationmanager.R;
 import com.example.locationmanager.models.AuthResponse;
+import com.example.locationmanager.models.AuthUser;
 import com.example.locationmanager.models.User;
+import com.example.locationmanager.models.UserResponse;
 import com.example.locationmanager.services.AuthInterface;
 import com.example.locationmanager.services.RestClient;
 import com.example.locationmanager.utils.SharePreferenceManager;
@@ -107,8 +109,11 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                         @Override
                         public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
                             AuthResponse authResponse = response.body();
+                            UserResponse userResponse = authResponse.data.getUser();
                             if(authResponse.status){
                                 sharePreferenceManager.setToken(authResponse.data.token);
+                                sharePreferenceManager.setUser(new AuthUser(userResponse.getId(),
+                                        userResponse.getName(), userResponse.getEmail()));
                                 startActivity(new Intent(getApplicationContext(), PermissionActivity.class));
                                 finish();
                             }

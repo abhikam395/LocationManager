@@ -7,6 +7,7 @@ public class LocationData {
     public double latitude;
     public double longitude;
     public String updatedAt;
+    public LocationUser user;
 
     public int getId(){
         return id;
@@ -26,5 +27,9 @@ public class LocationData {
 
     public String getUpdatedAt() {
         return updatedAt;
+    }
+
+    public LocationUser getUser() {
+        return user;
     }
 }

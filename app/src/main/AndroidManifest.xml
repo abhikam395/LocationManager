@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
         android:allowBackup="true"
@@ -19,8 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LocationManager"
         android:usesCleartextTraffic="true">
-        <activity android:name=".activities.SettingActivity"/>
-        <activity android:name=".activities.ProfileActivity"/>
+        <activity android:name=".activities.ChatActivity"></activity>
+        <activity android:name=".activities.SettingActivity" />
+        <activity android:name=".activities.ProfileActivity" />
 
         <meta-data
             android:name="com.google.android.gms.version"
@@ -40,10 +41,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!--You can ensure that your service is available to only your app by including
+        <!--
+You can ensure that your service is available to only your app by including
         the android:exported attribute and setting it to false.
-        This effectively stops other apps from starting your service, even when using an explicit intent.-->
+        This effectively stops other apps from starting your service, even when using an explicit intent.
+        -->
         <service
             android:name=".services.LocationUpdatesService"
             android:enabled="true"

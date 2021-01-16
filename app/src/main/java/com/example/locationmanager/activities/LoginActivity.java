@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -12,7 +13,9 @@ import android.widget.Toast;
 
 import com.example.locationmanager.R;
 import com.example.locationmanager.models.AuthResponse;
+import com.example.locationmanager.models.AuthUser;
 import com.example.locationmanager.models.User;
+import com.example.locationmanager.models.UserResponse;
 import com.example.locationmanager.services.AuthInterface;
 import com.example.locationmanager.services.RestClient;
 import com.example.locationmanager.utils.SharePreferenceManager;
@@ -24,6 +27,7 @@ import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
 
+    private static final String TAG = "LoginActivity";
     private TextView txtRegister;
     private Button btnFb, btnGmail, btnContinue;
     private TextInputEditText edtEmail;
@@ -93,8 +97,12 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                         @Override
                         public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
                             AuthResponse authResponse = response.body();
+                            UserResponse userResponse = authResponse.data.getUser();
+                            Log.d(TAG, "onResponse: " + userResponse);
                             if(authResponse.status){
                                 sharePreferenceManager.setToken(authResponse.data.token);
+                                sharePreferenceManager.setUser(new AuthUser(userResponse.getId(),
+                                        userResponse.getName(), userResponse.getEmail()));
                                 startActivity(new Intent(getApplicationContext(), PermissionActivity.class));
                                 finish();
                             }
