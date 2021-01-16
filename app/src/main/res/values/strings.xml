@@ -31,4 +31,5 @@
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="map_type">Map type</string>
     <string name="start_chat">Start Chat</string>
+    <string name="start_typing"><font size="12">Start typing</font></string>
 </resources>

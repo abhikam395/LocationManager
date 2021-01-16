@@ -92,7 +92,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List<LocationData> locationDataList;
     private Timer timer;
     private AuthUser user;
-    private TextView lblUserName;
+    private String selectedUserName;
+    private TextView lblUserName, lblUserLocation;
 
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -146,6 +147,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         btnStartChat = findViewById(R.id.btn_start_chat);
 
         lblUserName = findViewById(R.id.lbl_name_bottom_sheet_home);
+        lblUserLocation = findViewById(R.id.lbl_location_bottom_sheet_home);
         linearLayoutBottomSheet = findViewById(R.id.bottom_sheet_home);
         bottomSheetBehavior = BottomSheetBehavior.from(linearLayoutBottomSheet);
 
@@ -324,7 +326,10 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.btn_start_chat: {
-                startActivity(new Intent(this, ChatActivity.class));
+                Intent intent = new Intent(this, ChatActivity.class);
+                intent.putExtra("name", selectedUserName);
+                startActivity(intent);
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
                 break;
             }
             case R.id.cardview_all_user: {
@@ -364,7 +369,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onMarkerClick(Marker marker) {
         int markerId = Integer.parseInt(marker.getSnippet());
         if(markerId != user.getId()) {
-            lblUserName.setText(marker.getTitle());
+            selectedUserName = marker.getTitle();
+            lblUserName.setText(selectedUserName);
+            setAddress(lblUserLocation, marker.getPosition());
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         }
         return true;
@@ -380,7 +387,6 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             setAddress(txtCurrentLocation, latLng);
             lastLocation = latLng;
-            mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(lastLocation, 18.0f));
             addMarkersToMap();
         }
     }

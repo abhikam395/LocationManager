@@ -97,9 +97,9 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                         @Override
                         public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
                             AuthResponse authResponse = response.body();
-                            UserResponse userResponse = authResponse.data.getUser();
-                            Log.d(TAG, "onResponse: " + userResponse);
                             if(authResponse.status){
+                                UserResponse userResponse = authResponse.data.getUser();
+                                Log.d(TAG, "onResponse: " + userResponse);
                                 sharePreferenceManager.setToken(authResponse.data.token);
                                 sharePreferenceManager.setUser(new AuthUser(userResponse.getId(),
                                         userResponse.getName(), userResponse.getEmail()));
