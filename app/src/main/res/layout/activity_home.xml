@@ -45,7 +45,7 @@
         <LinearLayout
             android:id="@+id/bottom_sheet_home"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="100dp"
             android:background="@color/white"
             android:orientation="horizontal"
             android:paddingHorizontal="10dp"
@@ -73,7 +73,7 @@
                     android:id="@+id/lbl_location_bottom_sheet_home"
                     android:textStyle="bold"
                     android:textColor="@color/blue"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"/>
 

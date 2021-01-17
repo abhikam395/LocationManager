@@ -101,6 +101,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                                 UserResponse userResponse = authResponse.data.getUser();
                                 Log.d(TAG, "onResponse: " + userResponse);
                                 sharePreferenceManager.setToken(authResponse.data.token);
+                                Log.d(TAG, "onResponse: " + userResponse.getName());
                                 sharePreferenceManager.setUser(new AuthUser(userResponse.getId(),
                                         userResponse.getName(), userResponse.getEmail()));
                                 startActivity(new Intent(getApplicationContext(), PermissionActivity.class));

@@ -36,6 +36,9 @@ public class SharePreferenceManager {
         editor.putString("name", user.name);
         editor.putString("email", user.email);
         editor.apply();
+        Log.d(TAG, "setUser: " + user.id);
+        Log.d(TAG, "setUser: " + user.name);
+        Log.d(TAG, "setUser: " + user.email);
     }
 
     public void setToken(String token){

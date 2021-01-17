@@ -1,18 +1,19 @@
 package com.example.locationmanager.models;
 
 public class Chat {
-    public int id;
-    public String from;
+//    public int id;
+    public ChatUser from;
     public String message;
     public String time;
     public String date;
+    public boolean hasSeen;
 
-    public Chat setId(int id) {
-        this.id = id;
-        return this;
-    }
+//    public Chat setId(int id) {
+//        this.id = id;
+//        return this;
+//    }
 
-    public Chat setFrom(String from) {
+    public Chat setFrom(ChatUser from) {
         this.from = from;
         return this;
     }

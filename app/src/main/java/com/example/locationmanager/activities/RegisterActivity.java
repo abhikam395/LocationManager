@@ -109,8 +109,8 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                         @Override
                         public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
                             AuthResponse authResponse = response.body();
-                            UserResponse userResponse = authResponse.data.getUser();
                             if(authResponse.status){
+                                UserResponse userResponse = authResponse.data.getUser();
                                 sharePreferenceManager.setToken(authResponse.data.token);
                                 sharePreferenceManager.setUser(new AuthUser(userResponse.getId(),
                                         userResponse.getName(), userResponse.getEmail()));

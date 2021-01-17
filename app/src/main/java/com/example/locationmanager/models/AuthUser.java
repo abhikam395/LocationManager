@@ -1,5 +1,7 @@
 package com.example.locationmanager.models;
 
+import android.util.Log;
+
 public class AuthUser {
     public int id;
     public String name;
@@ -9,6 +11,7 @@ public class AuthUser {
         this.id = id;
         this.name = name;
         this.email = email;
+        Log.d("AuthUser", "AuthUser: "  + name);
     }
 
     public int getId() {

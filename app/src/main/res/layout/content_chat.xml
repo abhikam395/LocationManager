@@ -25,6 +25,7 @@
             android:paddingHorizontal="20dp">
 
             <EditText
+                android:id="@+id/edt_message_chat"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_marginRight="60dp"
@@ -32,6 +33,7 @@
                 android:hint="@string/start_typing"/>
 
             <ImageButton
+                android:id="@+id/imgBtn_send_chat"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_alignParentEnd="true"

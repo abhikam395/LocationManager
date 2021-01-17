@@ -6,6 +6,9 @@ public class ChatUser implements Serializable {
     public int id;
     public String name;
 
+    public ChatUser() {
+    }
+
     public ChatUser(int id, String name) {
         this.id = id;
         this.name = name;
