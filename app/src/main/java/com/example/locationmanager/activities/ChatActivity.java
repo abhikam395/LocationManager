@@ -7,7 +7,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.os.Bundle;
 import com.example.locationmanager.R;
 import com.example.locationmanager.adapters.ChatAdapter;
+import com.example.locationmanager.models.AuthUser;
 import com.example.locationmanager.models.Chat;
+import com.example.locationmanager.models.ChatUser;
+import com.example.locationmanager.utils.SharePreferenceManager;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,28 +23,39 @@ public class ChatActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private ChatAdapter chatAdapter;
     private Toolbar toolbar;
-    private String userName;
+    private ChatUser fromUser;
+    private ChatUser toUser;
+    private SharePreferenceManager sharePreferenceManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
-        userName = getIntent().getStringExtra("name");
+        toUser = (ChatUser) getIntent().getSerializableExtra("toUser");
         init();
+        useFirebase();
     }
 
     private void init(){
+        sharePreferenceManager = new SharePreferenceManager(this);
+
         toolbar = findViewById(R.id.toolbar_chat);
-        toolbar.setTitle(userName);
+//        toolbar.setTitle(to.name);
 
         recyclerView = findViewById(R.id.rv_chat);
         setUpRecyclerView();
+        setDataToFromUser();
     }
 
     private void setUpRecyclerView(){
         chatAdapter = new ChatAdapter(getChats());
         recyclerView.setAdapter(chatAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    private void setDataToFromUser(){
+        AuthUser user = sharePreferenceManager.getUser();
+        fromUser = new ChatUser(user.id, user.name);
     }
 
     private List<Chat> getChats(){
@@ -56,5 +73,15 @@ public class ChatActivity extends AppCompatActivity {
         Chat chat = new Chat();
         chat.setId(id).setFrom(from).setTime(time).setMessage(message).setDate(date);
         return chat;
+    }
+
+    private void useFirebase(){
+        String id = fromUser.id + "_" + toUser.id;
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("messages");
+        Chat chat = new Chat();
+        chat.setMessage("Hello").setFrom(fromUser.name);
+        myRef.child(id).setValue(chat);
+//        myRef.setValue("Hello, World!");
     }
 }

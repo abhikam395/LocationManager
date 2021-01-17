@@ -30,6 +30,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.example.locationmanager.R;
 import com.example.locationmanager.models.AuthUser;
+import com.example.locationmanager.models.Chat;
+import com.example.locationmanager.models.ChatUser;
 import com.example.locationmanager.models.LocationData;
 import com.example.locationmanager.models.LocationResponse;
 import com.example.locationmanager.models.LocationUser;
@@ -92,7 +94,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private List<LocationData> locationDataList;
     private Timer timer;
     private AuthUser user;
-    private String selectedUserName;
+    private ChatUser selectedUser;
     private TextView lblUserName, lblUserLocation;
 
     // Monitors the state of the connection to the service.
@@ -327,7 +329,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         switch (v.getId()){
             case R.id.btn_start_chat: {
                 Intent intent = new Intent(this, ChatActivity.class);
-                intent.putExtra("name", selectedUserName);
+                intent.putExtra("toUser", selectedUser);
                 startActivity(intent);
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
                 break;
@@ -369,8 +371,8 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onMarkerClick(Marker marker) {
         int markerId = Integer.parseInt(marker.getSnippet());
         if(markerId != user.getId()) {
-            selectedUserName = marker.getTitle();
-            lblUserName.setText(selectedUserName);
+            selectedUser = new ChatUser(Integer.parseInt(marker.getSnippet()), marker.getTitle());
+            lblUserName.setText(selectedUser.name);
             setAddress(lblUserLocation, marker.getPosition());
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         }
