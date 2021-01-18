@@ -17,12 +17,14 @@ import com.example.locationmanager.adapters.ChatAdapter;
 import com.example.locationmanager.models.AuthUser;
 import com.example.locationmanager.models.Chat;
 import com.example.locationmanager.models.ChatUser;
+import com.example.locationmanager.utils.GlobalApplication;
 import com.example.locationmanager.utils.SharePreferenceManager;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
@@ -35,14 +37,14 @@ import java.util.List;
 public class ChatActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "ChatActivity";
+    private SharePreferenceManager sharePreferenceManager;
+    private FirebaseDatabase firebaseDatabase;
+    private DatabaseReference messageDatabaseReference;
     private RecyclerView recyclerView;
     private ChatAdapter chatAdapter;
     private Toolbar toolbar;
     private ChatUser fromUser;
     private ChatUser toUser;
-    private SharePreferenceManager sharePreferenceManager;
-    private FirebaseDatabase firebaseDatabase;
-    private DatabaseReference messageDatabaseReference;
     private ImageButton sendButton;
     private EditText edtMessage;
     private String id;
@@ -83,10 +85,24 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        GlobalApplication.activityResumed();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        GlobalApplication.activityPaused();
+    }
+
     private void readDataFromDatabase(){
-        messageDatabaseReference.child(id).addChildEventListener(new ChildEventListener() {
+        Query query = messageDatabaseReference.child(id);
+        query.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                Log.d(TAG, "onChildAdded: " + previousChildName);
                 chatList.add(snapshot.getValue(Chat.class));
                 recyclerView.smoothScrollToPosition(recyclerView.getAdapter().getItemCount() - 1);
                 chatAdapter.notifyDataSetChanged();
@@ -96,6 +112,7 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
             public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
                 chatList.add(snapshot.getValue(Chat.class));
                 chatAdapter.notifyDataSetChanged();
+
             }
 
             @Override

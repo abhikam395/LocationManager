@@ -38,6 +38,7 @@ import com.example.locationmanager.models.LocationUser;
 import com.example.locationmanager.services.LocationInterface;
 import com.example.locationmanager.services.LocationUpdatesService;
 import com.example.locationmanager.services.RestClient;
+import com.example.locationmanager.utils.GlobalApplication;
 import com.example.locationmanager.utils.SharePreferenceManager;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -48,6 +49,8 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,7 +65,10 @@ import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback,
         NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, GoogleMap.OnMarkerClickListener {
-    private static final String TAG = HomeActivity.class.getSimpleName();
+
+    private static final String TAG = "HomeActivity";
+    private FirebaseDatabase firebaseDatabase;
+    private DatabaseReference databaseReference;
 
     private GoogleMap mGoogleMap;
 
@@ -96,6 +102,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private AuthUser user;
     private ChatUser selectedUser;
     private TextView lblUserName, lblUserLocation;
+    final static private Timer pingTimer = null;
 
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -130,6 +137,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void init(){
 
         sharePreferenceManager = new SharePreferenceManager(this);
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        databaseReference = firebaseDatabase.getReference("status");
+
         user = sharePreferenceManager.getUser();
         locationDataList = new ArrayList<>();
 
@@ -268,12 +278,10 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onStart() {
         super.onStart();
+//        sendPingToServer();
         bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
                 Context.BIND_AUTO_CREATE);
-//        setTimer();
     }
-
-
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
@@ -289,7 +297,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: " + mGoogleMap);
+        GlobalApplication.activityResumed();
         if(mGoogleMap != null) {
             mGoogleMap.setMapType(getMapType());
         }
@@ -299,6 +307,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onPause() {
+        GlobalApplication.activityPaused();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(myReceiver);
         super.onPause();
     }
@@ -315,7 +324,6 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
             unbindService(mServiceConnection);
             mBound = false;
         }
-        sharePreferenceManager.setLastLocation(lastLocation);
         super.onStop();
     }
 
@@ -370,6 +378,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public boolean onMarkerClick(Marker marker) {
         int markerId = Integer.parseInt(marker.getSnippet());
+        mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), 18.0f));
         if(markerId != user.getId()) {
             selectedUser = new ChatUser(Integer.parseInt(marker.getSnippet()), marker.getTitle());
             lblUserName.setText(selectedUser.name);
