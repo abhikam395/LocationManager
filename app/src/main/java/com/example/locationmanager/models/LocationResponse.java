@@ -3,6 +3,7 @@ package com.example.locationmanager.models;
 public class LocationResponse {
 
     public boolean status;
+    public String message;
     public Data data;
 
     public boolean isStatus() {
@@ -11,5 +12,9 @@ public class LocationResponse {
 
     public Data getData() {
         return data;
+    }
+
+    public String getMessage() {
+        return message;
     }
 }

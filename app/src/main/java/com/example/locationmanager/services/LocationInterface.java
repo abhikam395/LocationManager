@@ -16,9 +16,11 @@ public interface LocationInterface {
             @Header("Token") String token
     );
 
-    @POST("/api/v1/auth/login")
-    Call<AuthResponse> login(
-            @Query("email") String email,
-            @Query("password") String password
+    @POST("/api/v1/location")
+    Call<LocationResponse> updateLocation(
+            @Header("Token") String token,
+            @Query("userId") int userId,
+            @Query("latitude") double latitude,
+            @Query("longitude") double longitude
     );
 }

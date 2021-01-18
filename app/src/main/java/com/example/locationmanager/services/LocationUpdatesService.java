@@ -8,6 +8,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.location.Location;
 import android.os.Binder;
@@ -16,6 +17,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -25,12 +27,15 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.example.locationmanager.R;
 import com.example.locationmanager.activities.HomeActivity;
+import com.example.locationmanager.helpers.ApiManager;
 import com.example.locationmanager.utils.LocationUtils;
+import com.example.locationmanager.utils.SharePreferenceManager;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -57,7 +62,7 @@ public class LocationUpdatesService extends Service {
     /**
      * The desired interval for location updates. Inexact. Updates may be more or less frequent.
      */
-    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 60 * 1000;
+    private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 2 * 60 * 1000;
 
     /**
      * The fastest rate for active location updates. Updates will never be more frequent
@@ -114,6 +119,7 @@ public class LocationUpdatesService extends Service {
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
                 onNewLocation(locationResult.getLastLocation());
+                Log.d(TAG, "onLocationResult:");
             }
         };
 
@@ -287,6 +293,7 @@ public class LocationUpdatesService extends Service {
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful() && task.getResult() != null) {
                             mLocation = task.getResult();
+                            Log.d(TAG, "getLastLocation: " + mLocation);
                         } else {
                             Log.w(TAG, "Failed to get location.");
                         }
@@ -298,7 +305,8 @@ public class LocationUpdatesService extends Service {
 
     private void onNewLocation(Location location) {
         Log.i(TAG, "New location: " + location);
-
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        updateLocation(latLng);
         mLocation = location;
 
         // Notify anyone listening for broadcasts about the new location.
@@ -310,6 +318,10 @@ public class LocationUpdatesService extends Service {
         if (serviceIsRunningInForeground(this)) {
             mNotificationManager.notify(NOTIFICATION_ID, getNotification());
         }
+    }
+
+    private void updateLocation(LatLng latLng){
+        ApiManager.callLocationApi(latLng);
     }
 
     /**

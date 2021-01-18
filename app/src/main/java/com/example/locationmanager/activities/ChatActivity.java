@@ -37,8 +37,8 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
 
     private static final String TAG = "ChatActivity";
     private SharePreferenceManager sharePreferenceManager;
-    private FirebaseDatabase firebaseDatabase;
     private DatabaseReference messageDatabaseReference;
+    private FirebaseDatabase firebaseDatabase;
     private RecyclerView recyclerView;
     private ChatAdapter chatAdapter;
     private Toolbar toolbar;
