@@ -1,16 +1,17 @@
 package com.example.locationmanager.activities;
 
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.EditText;
-import android.widget.ImageButton;
 
 import com.example.locationmanager.R;
 import com.example.locationmanager.adapters.ChatAdapter;
@@ -25,12 +26,10 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -149,7 +148,7 @@ public class ChatActivity extends AppCompatActivity implements View.OnClickListe
         Chat chat = new Chat();
         chat.setMessage(message).setFrom(fromUser).setDate(getCurrentDate())
                         .setTime(String.valueOf(Calendar.getInstance()
-                        .getTime()));
+                        .getTimeInMillis()));
         messageDatabaseReference.child(id).push().setValue(chat);
         edtMessage.setText("");
     }
