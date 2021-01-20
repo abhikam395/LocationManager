@@ -11,7 +11,6 @@ public class AuthUser {
         this.id = id;
         this.name = name;
         this.email = email;
-        Log.d("AuthUser", "AuthUser: "  + name);
     }
 
     public int getId() {

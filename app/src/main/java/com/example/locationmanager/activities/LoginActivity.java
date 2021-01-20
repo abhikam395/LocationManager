@@ -4,11 +4,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.os.Bundle;
 import android.widget.Toast;
 
 import com.example.locationmanager.R;
@@ -16,14 +14,12 @@ import com.example.locationmanager.models.AuthResponse;
 import com.example.locationmanager.models.AuthUser;
 import com.example.locationmanager.models.User;
 import com.example.locationmanager.models.UserResponse;
-import com.example.locationmanager.services.AuthInterface;
-import com.example.locationmanager.services.RestClient;
+import com.example.locationmanager.utils.GlobalApplication;
 import com.example.locationmanager.utils.SharePreferenceManager;
+import com.example.locationmanager.viewmodel.AuthViewModel;
 import com.google.android.material.textfield.TextInputEditText;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import javax.inject.Inject;
 
 public class LoginActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -37,8 +33,12 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     private SharePreferenceManager sharePreferenceManager;
 
+    @Inject
+    AuthViewModel authViewModel;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ((GlobalApplication)getApplicationContext()).applicationComponent.inject(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
@@ -91,32 +91,20 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
             }
             case R.id.login_btn_continue: {
                 if(isValidate()){
-                    AuthInterface authInterface = RestClient.getClient().create(AuthInterface.class);
-                    Call<AuthResponse> call = authInterface.login(user.email, user.password);
-                    call.enqueue(new Callback<AuthResponse>() {
-                        @Override
-                        public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
-                            AuthResponse authResponse = response.body();
-                            if(authResponse.status){
-                                UserResponse userResponse = authResponse.data.getUser();
-                                Log.d(TAG, "onResponse: " + userResponse.name);
-                                Log.d(TAG, "onResponse: " + userResponse.email);
-                                Log.d(TAG, "onResponse: " + response.body().data.user.name + "sdfsdf");
-                                sharePreferenceManager.setToken(authResponse.data.token);
-                                sharePreferenceManager.setUser(new AuthUser(userResponse.getId(),
-                                        userResponse.getName(), userResponse.getEmail()));
-                                startActivity(new Intent(getApplicationContext(), PermissionActivity.class));
-                                finish();
-                            }
-                            else
-                                Toast.makeText(getApplicationContext(),String.valueOf(authResponse.error.message),
-                                        Toast.LENGTH_SHORT).show();
+                    authViewModel.loginUser(user.email, user.password).observe(this, authResponse -> {
+                        AuthResponse response = authResponse;
+                        if(response.getStatus()){
+                            UserResponse userResponse = response.data.getUser();
+                            sharePreferenceManager.setToken(response.data.token);
+                            sharePreferenceManager.setUser(new AuthUser(userResponse.getId(),
+                                    userResponse.getName(), userResponse.getEmail()));
+                            startActivity(new Intent(getApplicationContext(), PermissionActivity.class));
+                            finish();
                         }
-                        @Override
-                        public void onFailure(Call<AuthResponse> call, Throwable t) {
-
-                        }
-                    });
+                        else
+                            Toast.makeText(getApplicationContext(),String.valueOf(response.getError().getMessage()),
+                                    Toast.LENGTH_SHORT).show();
+                       });
                 }
                 else
                     Toast.makeText(this, "Wrong input", Toast.LENGTH_SHORT).show();

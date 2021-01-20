@@ -26,20 +26,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.lifecycle.Observer;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.example.locationmanager.R;
+import com.example.locationmanager.helpers.LocationManager;
 import com.example.locationmanager.models.AuthUser;
-import com.example.locationmanager.models.Chat;
 import com.example.locationmanager.models.ChatUser;
 import com.example.locationmanager.models.LocationData;
 import com.example.locationmanager.models.LocationResponse;
 import com.example.locationmanager.models.LocationUser;
-import com.example.locationmanager.services.LocationInterface;
 import com.example.locationmanager.services.LocationUpdatesService;
-import com.example.locationmanager.services.RestClient;
 import com.example.locationmanager.utils.GlobalApplication;
 import com.example.locationmanager.utils.SharePreferenceManager;
+import com.example.locationmanager.viewmodel.LocationViewModel;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -57,18 +57,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
-import java.util.TimerTask;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import javax.inject.Inject;
 
 public class HomeActivity extends AppCompatActivity implements OnMapReadyCallback,
         NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, GoogleMap.OnMarkerClickListener {
 
     private static final String TAG = "HomeActivity";
-    private FirebaseDatabase firebaseDatabase;
-    private DatabaseReference databaseReference;
 
     private GoogleMap mGoogleMap;
 
@@ -97,12 +92,13 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LatLng lastLocation;
 
     private SharePreferenceManager sharePreferenceManager;
-    private List<LocationData> locationDataList;
-    private Timer timer;
+    private List<LocationData> userLocatons;
     private AuthUser user;
     private ChatUser selectedUser;
     private TextView lblUserName, lblUserLocation;
-    final static private Timer pingTimer = null;
+
+    @Inject LocationViewModel locationViewModel;
+    @Inject LocationManager locationManager;
 
     // Monitors the state of the connection to the service.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -125,6 +121,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ((GlobalApplication)getApplicationContext()).applicationComponent.inject(this);
         super.onCreate(savedInstanceState);
         myReceiver = new MyReceiver();
         setContentView(R.layout.activity_home);
@@ -137,11 +134,9 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void init(){
 
         sharePreferenceManager = new SharePreferenceManager(this);
-        firebaseDatabase = FirebaseDatabase.getInstance();
-        databaseReference = firebaseDatabase.getReference("status");
 
         user = sharePreferenceManager.getUser();
-        locationDataList = new ArrayList<>();
+        userLocatons = new ArrayList<>();
 
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -164,7 +159,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         bottomSheetBehavior = BottomSheetBehavior.from(linearLayoutBottomSheet);
 
         setListeners();
-        callSelfAgain();
+        callLocationApi();
     }
 
     private void setListeners(){
@@ -218,7 +213,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         lastLocation = sharePreferenceManager.getLastLocation();
         if(lastLocation != null){
             mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(lastLocation, 18.0f));
-            addMarker(lastLocation, "My location", user.getId());
+            locationManager.addMarker(lastLocation, "My location", user.getId(), mGoogleMap);
         }
     }
 
@@ -230,40 +225,17 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     //get users location
-    private void callLocationApi(){
-        String token = sharePreferenceManager.getToken();
-        LocationInterface locationInterface = RestClient.getClient().create(LocationInterface.class);
-        Call<LocationResponse> call = locationInterface.getLocations(token);
-        call.enqueue(new Callback<LocationResponse>() {
-            @Override
-            public void onResponse(Call<LocationResponse> call, Response<LocationResponse> response) {
-                LocationResponse locationResponse = response.body();
-                Log.d(TAG, "onResponse: " + call.request());
-                if(locationResponse.status){
-                    locationDataList = locationResponse.getData().getLocations();
-                    Log.d(TAG, "onResponse: " + locationDataList.size());
-                    addMarkersToMap();
-                }
-                else
-                    Toast.makeText(getApplicationContext(),"Error got",
-                            Toast.LENGTH_SHORT).show();
-            }
-            @Override
-            public void onFailure(Call<LocationResponse> call, Throwable t) {
-
-            }
-        });
-    }
-
-    private void addMarkersToMap(){
-        mGoogleMap.clear();
-        for(LocationData locationData : locationDataList){
-            LocationUser user = locationData.getUser();
-            LatLng latLng = new LatLng(locationData.getLatitude(), locationData.getLongitude());
-            addMarker(latLng, user.name, user.id);
-        }
-        addMarker(lastLocation, "My location", user.getId());
-    }
+   private void callLocationApi() {
+       String token = sharePreferenceManager.getToken();
+       locationViewModel.getUsersLocation(token).observe(this, locationResponse -> {
+           if (locationResponse.status) {
+               userLocatons = locationResponse.getData().getLocations();
+               locationManager.addMarkersToMap(mGoogleMap, userLocatons);
+           } else
+               Toast.makeText(getApplicationContext(), "Error got",
+                       Toast.LENGTH_SHORT).show();
+       });
+   }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -278,7 +250,6 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onStart() {
         super.onStart();
-//        sendPingToServer();
         bindService(new Intent(this, LocationUpdatesService.class), mServiceConnection,
                 Context.BIND_AUTO_CREATE);
     }
@@ -319,12 +290,17 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
      */
     @Override
     protected void onStop() {
-        stopTimer();
         if (mBound) {
             unbindService(mServiceConnection);
             mBound = false;
         }
         super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        sharePreferenceManager.setLastLocation(lastLocation);
+        super.onDestroy();
     }
 
     @Override
@@ -382,7 +358,7 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(markerId != user.getId()) {
             selectedUser = new ChatUser(Integer.parseInt(marker.getSnippet()), marker.getTitle());
             lblUserName.setText(selectedUser.name);
-            setAddress(lblUserLocation, marker.getPosition());
+            locationManager.setAddress(lblUserLocation, marker.getPosition(), this);
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         }
         return true;
@@ -396,53 +372,20 @@ public class HomeActivity extends AppCompatActivity implements OnMapReadyCallbac
         public void onReceive(Context context, Intent intent) {
             Location location = intent.getParcelableExtra(mService.EXTRA_LOCATION);
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-            setAddress(txtCurrentLocation, latLng);
+            Log.d(TAG, "onReceive: " + latLng);
+            locationManager.setAddress(txtCurrentLocation, latLng, getApplicationContext());
             lastLocation = latLng;
-            addMarkersToMap();
+            updateLocation(latLng);
         }
     }
 
-    //call again every 20 second
-    private void callSelfAgain(){
-        callLocationApi();
-        setTimer();
-    }
-
-    private void setTimer(){
-        timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                callLocationApi();
-            }
-        }, 20 * 1000, 20 * 1000);
-    }
-
-    private void stopTimer(){
-        timer.cancel();
-    }
-
-    private void setAddress(TextView lblUserAddress, LatLng latLng){
-        Geocoder geocoder;
-        final List<Address>[] addresses = new List[]{new ArrayList<>()};
-        geocoder = new Geocoder(this, Locale.getDefault());
-
-        Thread thread = new Thread(() -> {
-            try {
-                addresses[0] = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
-                String address = addresses[0].get(0).getAddressLine(0);
-
-                lblUserAddress.post(() -> lblUserAddress.setText(address));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        thread.start();
-    }
-
-    private void addMarker(LatLng latLng, String title, int userId){
-        if(latLng == null)
-            return;
-        mGoogleMap.addMarker(new MarkerOptions().position(latLng).title(title).snippet(String.valueOf(userId)));
+    //update self location
+    private void updateLocation(LatLng latLng){
+        locationViewModel.updateUserLocation(sharePreferenceManager.getToken(),
+                sharePreferenceManager.getUser().getId(), latLng.latitude, latLng.longitude).
+                observe(this, locationResponse -> {
+                    locationManager.addMarker(latLng, "My location", user.getId(), mGoogleMap);
+                    mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18.0f));
+                });
     }
 }

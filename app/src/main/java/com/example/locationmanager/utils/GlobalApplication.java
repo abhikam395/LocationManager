@@ -3,6 +3,8 @@ package com.example.locationmanager.utils;
 import android.app.Application;
 import android.util.Log;
 
+import com.example.locationmanager.dagger.ApplicationComponent;
+import com.example.locationmanager.dagger.DaggerApplicationComponent;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -17,6 +19,7 @@ public class GlobalApplication extends Application {
     private static SharePreferenceManager sharePreferenceManager;
     private static Timer timer = null;
 
+    public ApplicationComponent applicationComponent = DaggerApplicationComponent.create();
 
     @Override
     public void onCreate() {

@@ -20,24 +20,25 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.lifecycle.Observer;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.example.locationmanager.R;
 import com.example.locationmanager.activities.HomeActivity;
-import com.example.locationmanager.helpers.ApiManager;
+import com.example.locationmanager.models.LocationResponse;
+import com.example.locationmanager.utils.GlobalApplication;
 import com.example.locationmanager.utils.LocationUtils;
 import com.example.locationmanager.utils.SharePreferenceManager;
+import com.example.locationmanager.viewmodel.LocationViewModel;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+
+import javax.inject.Inject;
 
 public class LocationUpdatesService extends Service {
 
@@ -107,11 +108,16 @@ public class LocationUpdatesService extends Service {
      */
     public Location mLocation;
 
+    @Inject
+    LocationViewModel locationViewModel;
+
+    @Inject
     public LocationUpdatesService() {
     }
 
     @Override
     public void onCreate() {
+        ((GlobalApplication)getApplicationContext()).applicationComponent.inject(this);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         mLocationCallback = new LocationCallback() {
@@ -321,7 +327,16 @@ public class LocationUpdatesService extends Service {
     }
 
     private void updateLocation(LatLng latLng){
-        ApiManager.callLocationApi(latLng);
+        SharePreferenceManager sharePreferenceManager = new SharePreferenceManager(getApplicationContext());
+        String token = sharePreferenceManager.getToken();
+        int id = sharePreferenceManager.getUser().getId();
+
+            locationViewModel.updateUserLocation(token, id, latLng.latitude, latLng.longitude).observeForever(new Observer<LocationResponse>() {
+                @Override
+                public void onChanged(LocationResponse locationResponse) {
+                    Log.d(TAG, "onChanged:  " + locationResponse.getMessage());
+                }
+            });
     }
 
     /**
